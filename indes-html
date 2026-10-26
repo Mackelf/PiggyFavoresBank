@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wii Fit - Today's Count</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Vue 3 vía CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
+  <!-- Fuentes estilo Nintendo Wii -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* Estilos globales */
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: radial-gradient(circle at center, #fbfbfb 0%, #e0e6ed 100%);
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    /* Fondo de cuadrícula suave 3D estilo Wii Menu */
+    .wii-grid-bg {
+      background-image: 
+        linear-gradient(to right, rgba(0, 160, 220, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 160, 220, 0.08) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    /* Marco Blanco 3D Estilo Wii Gadget */
+    .wii-frame-outer {
+      background: linear-gradient(145deg, #ffffff, #dcdcdc);
+      border-radius: 36px;
+      box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.15),
+        inset 0 2px 4px rgba(255, 255, 255, 0.9),
+        inset 0 -5px 12px rgba(0, 0, 0, 0.1);
+      border: 3px solid #eef2f5;
+      padding: 18px;
+      position: relative;
+    }
+
+    /* Pestaña superior del marco estilo reloj Wii Fit */
+    .wii-frame-notch {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 14px;
+      background: #e3e8ed;
+      border-radius: 8px 8px 0 0;
+      box-shadow: inset 0 2px 3px rgba(0,0,0,0.15);
+    }
+
+    /* Pantalla Turquesa Cian con Bisel */
+    .wii-screen-bevel {
+      background: #c5d4df;
+      border-radius: 24px;
+      padding: 10px;
+      box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .wii-screen {
+      background: linear-gradient(180deg, #00b4d8 0%, #0096c7 50%, #0077b6 100%);
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.25);
+      border: 2px solid #00c4e6;
+    }
+
+    /* Líneas de escaneo CRT / Tela estilo Wii Fit */
+    .scanlines {
+      background: linear-gradient(
+        rgba(255, 255, 255, 0.13) 50%, 
+        rgba(0, 0, 0, 0.1) 50%
+      );
+      background-size: 100% 4px;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* Brillo superior en la pantalla */
+    .screen-glare {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 45%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+      border-radius: 16px 16px 0 0;
+      pointer-events: none;
+    }
+
+    /* Texto de título "Today's Count" */
+    .wii-title-text {
+      font-family: 'Fredoka One', cursive, sans-serif;
+      color: #ffffff;
+      text-shadow: 
+        0 2px 4px rgba(0, 60, 100, 0.6),
+        -1px -1px 0 #005f8d,
+         1px -1px 0 #005f8d,
+        -1px  1px 0 #005f8d,
+         1px  1px 0 #005f8d;
+      letter-spacing: 0.5px;
+    }
+
+    /* Display Numérico Digital con Borde Amarillo-Verde */
+    .wii-digital-count {
+      font-family: 'Fredoka One', cursive, sans-serif;
+      color: #ffffff;
+      text-shadow: 
+        3px 3px 0px #82c000,
+        -2px -2px 0px #82c000,
+         2px -2px 0px #82c000,
+        -2px  2px 0px #82c000,
+         2px  2px 0px #82c000,
+         0px  4px 8px rgba(0, 0, 0, 0.4);
+      filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2));
+    }
+
+    /* Botones Ovalados Estilo Wii */
+    .wii-button {
+      background: linear-gradient(180deg, #ffffff 0%, #e4eaf0 100%);
+      border: 2px solid #00a0dc;
+      color: #0088cc;
+      border-radius: 50px;
+      box-shadow: 
+        0 4px 10px rgba(0, 160, 220, 0.2),
+        inset 0 2px 2px rgba(255, 255, 255, 0.9);
+      font-weight: 800;
+      transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .wii-button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(180deg, #ffffff 0%, #d5e5f5 100%);
+      box-shadow: 
+        0 6px 14px rgba(0, 160, 220, 0.35),
+        inset 0 2px 2px rgba(255, 255, 255, 1);
+    }
+
+    .wii-button:active {
+      transform: scale(0.96);
+      box-shadow: 0 2px 5px rgba(0, 160, 220, 0.2);
+    }
+
+    .wii-button-primary {
+      background: linear-gradient(180deg, #00d2ff 0%, #0088cc 100%);
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .wii-button-primary:hover {
+      background: linear-gradient(180deg, #33dcff 0%, #0099e6 100%);
+    }
+
+    /* Botón estilo [B] */
+    .wii-badge-b {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #00a0dc;
+      border-radius: 6px;
+      padding: 0px 5px;
+      font-size: 0.8em;
+      margin-right: 4px;
+      color: #00a0dc;
+      background: #fff;
+    }
+
+    /* Animación de salto de la alcancía */
+    @keyframes pigBounce {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.2) rotate(-6deg); }
+      60% { transform: scale(0.95) rotate(4deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .pig-bounce {
+      animation: pigBounce 0.35s ease-out;
+    }
+  </style>
+</head>
+<body class="wii-grid-bg flex items-center justify-center p-4 min-h-screen">
+
+  <div id="app" class="w-full max-w-md">
+    
+    <!-- Contenedor Principal / Gadget Wii -->
+    <div class="wii-frame-outer my-auto">
+      <!-- Muesca decorativa superior -->
+      <div class="wii-frame-notch"></div>
+
+      <!-- Marco interior / Bisel -->
+      <div class="wii-screen-bevel">
+        
+        <!-- Pantalla Turquesa -->
+        <div class="wii-screen p-6 text-center flex flex-col items-center justify-between min-h-[300px]">
+          <div class="scanlines"></div>
+          <div class="screen-glare"></div>
+
+          <!-- Título "Today's Count" -->
+          <div class="z-10 w-full pt-1">
+            <h2 class="wii-title-text text-2xl md:text-3xl">
+              Today's Count
+            </h2>
+          </div>
+
+          <!-- Cerdito Alcancía Estilizado SVG -->
+          <div class="z-10 my-2 cursor-pointer" @click="incrementCount">
+            <svg 
+              :class="{ 'pig-bounce': isBouncing }" 
+              class="w-24 h-24 md:w-28 md:h-28 filter drop-shadow-lg transition-transform" 
+              viewBox="0 0 200 200" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <!-- Sombra de la alcancía -->
+              <ellipse cx="100" cy="175" rx="55" ry="12" fill="rgba(0,60,100,0.25)" />
+              
+              <!-- Patas del cerdito -->
+              <rect x="65" y="140" width="20" height="25" rx="8" fill="#ff9ebb" stroke="#d85a82" stroke-width="4"/>
+              <rect x="115" y="140" width="20" height="25" rx="8" fill="#ff9ebb" stroke="#d85a82" stroke-width="4"/>
+
+              <!-- Cuerpo -->
+              <ellipse cx="100" cy="110" rx="65" ry="50" fill="#ffb6c1" stroke="#ffffff" stroke-width="5"/>
+              <ellipse cx="100" cy="110" rx="65" ry="50" fill="url(#pigGradient)" stroke="#d85a82" stroke-width="4"/>
+
+              <!-- Oreja Izquierda -->
+              <path d="M50 75 C40 45, 70 50, 70 65 Z" fill="#ff9ebb" stroke="#d85a82" stroke-width="3"/>
+              <!-- Oreja Derecha -->
+              <path d="M150 75 C160 45, 130 50, 130 65 Z" fill="#ff9ebb" stroke="#d85a82" stroke-width="3"/>
+
+              <!-- Ojitos -->
+              <circle cx="75" cy="98" r="6" fill="#333333"/>
+              <circle cx="77" cy="96" r="2" fill="#ffffff"/>
+              <circle cx="125" cy="98" r="6" fill="#333333"/>
+              <circle cx="127" cy="96" r="2" fill="#ffffff"/>
+
+              <!-- Hocico -->
+              <ellipse cx="100" cy="118" rx="22" ry="15" fill="#ff8da9" stroke="#d85a82" stroke-width="3"/>
+              <circle cx="93" cy="118" r="3" fill="#b83b62"/>
+              <circle cx="107" cy="118" r="3" fill="#b83b62"/>
+
+              <!-- Ranura de Moneda Superior -->
+              <ellipse cx="100" cy="64" rx="18" ry="4" fill="#6d1b36"/>
+
+              <!-- Moneda cayendo al hacer click -->
+              <g v-if="isBouncing" class="transition-all duration-300">
+                <circle cx="100" cy="42" r="10" fill="#ffd700" stroke="#daa520" stroke-width="2"/>
+                <text x="100" y="46" font-size="12" font-family="Fredoka One" fill="#8b6508" text-anchor="middle">$</text>
+              </g>
+
+              <defs>
+                <linearGradient id="pigGradient" x1="100" y1="60" x2="100" y2="160" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#ffccd5"/>
+                  <stop offset="1" stop-color="#ff9ebb"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+
+          <!-- Display Digital Grande del Contador -->
+          <div class="z-10 mb-2">
+            <div class="wii-digital-count text-6xl md:text-7xl tracking-wider">
+              {{ count }}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Panel de Controles -->
+      <div class="mt-6 flex flex-col gap-4">
+        
+        <!-- Botones Principales: Incrementar y Clear -->
+        <div class="flex items-center justify-center gap-4">
+          <!-- Botón Incrementar -->
+          <button 
+            @click="incrementCount" 
+            class="wii-button wii-button-primary px-8 py-3 text-xl flex items-center gap-2 cursor-pointer"
+          >
+            ➕ Añadir
+          </button>
+
+          <!-- Botón Clear -->
+          <button 
+            @click="clearCount" 
+            class="wii-button px-6 py-3 text-lg cursor-pointer"
+          >
+            🧹 Clear
+          </button>
+        </div>
+
+        <!-- Botón Inferior estilo Wii Navigation ([B] Back / Sound) -->
+        <div class="flex justify-between items-center px-2 pt-2">
+          <button @click="clearCount" class="wii-button px-4 py-1.5 text-sm flex items-center">
+            <span class="wii-badge-b">B</span> Reiniciar
+          </button>
+
+          <!-- Toggle Sonido -->
+          <button @click="soundEnabled = !soundEnabled" class="text-xs font-bold text-slate-500 hover:text-cyan-700 flex items-center gap-1">
+            <span>{{ soundEnabled ? '🔊 Sonido On' : '🔇 Mute' }}</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Pie de página -->
+    <div class="text-center mt-6 text-slate-400 text-xs font-bold">
+      Wii Fit Piggy Counter • Creado con Vue 3 Embebido
+    </div>
+
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue;
+
+    createApp({
+      setup() {
+        const count = ref(0);
+        const isBouncing = ref(false);
+        const soundEnabled = ref(true);
+
+        // Sintetizador Web Audio API para efectos estilo Wii / Moneda
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const playSound = (type) => {
+          if (!soundEnabled.value) return;
+          try {
+            if (audioCtx.state === 'suspended') {
+              audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'coin') {
+              // Sonido de moneda / alcancía estilo retro
+              const osc1 = audioCtx.createOscillator();
+              const osc2 = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+
+              osc1.type = 'sine';
+              osc2.type = 'sine';
+
+              // Tono 1 (B5 -> E6)
+              osc1.frequency.setValueAtTime(987.77, now);
+              osc1.frequency.setValueAtTime(1318.51, now + 0.08);
+
+              // Tono armónico
+              osc2.frequency.setValueAtTime(1975.53, now);
+              osc2.frequency.setValueAtTime(2637.02, now + 0.08);
+
+              gain.gain.setValueAtTime(0.2, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+              osc1.connect(gain);
+              osc2.connect(gain);
+              gain.connect(audioCtx.destination);
+
+              osc1.start(now);
+              osc2.start(now);
+              osc1.stop(now + 0.3);
+              osc2.stop(now + 0.3);
+            } else if (type === 'clear') {
+              // Sonido descendente tipo reset
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(523.25, now); // C5
+              osc.frequency.exponentialRampToValueAtTime(261.63, now + 0.2); // C4
+
+              gain.gain.setValueAtTime(0.2, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+              osc.connect(gain);
+              gain.connect(audioCtx.destination);
+
+              osc.start(now);
+              osc.stop(now + 0.2);
+            }
+          } catch (e) {
+            console.log("Audio no activado", e);
+          }
+        };
+
+        const triggerBounce = () => {
+          isBouncing.value = false;
+          setTimeout(() => {
+            isBouncing.value = true;
+            setTimeout(() => {
+              isBouncing.value = false;
+            }, 350);
+          }, 10);
+        };
+
+        const incrementCount = () => {
+          count.value++;
+          playSound('coin');
+          triggerBounce();
+        };
+
+        const clearCount = () => {
+          count.value = 0;
+          playSound('clear');
+        };
+
+        return {
+          count,
+          isBouncing,
+          soundEnabled,
+          incrementCount,
+          clearCount
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
